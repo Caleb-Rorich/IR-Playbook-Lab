@@ -1,231 +1,195 @@
-# Lab Setup Guide — IR Playbook Lab
+# 🚨 IR-Playbook-Lab
 
-This guide walks through building the complete isolated lab environment from scratch. Estimated time: 2–3 hours. No cloud account required.
-
----
-
-## Prerequisites
-
-| Requirement | Minimum | Recommended |
-|-------------|---------|-------------|
-| RAM | 12 GB | 16 GB |
-| Disk space | 80 GB free | 120 GB free |
-| CPU cores | 4 | 6+ |
-| OS (host) | Windows 10 / Ubuntu 20.04+ / macOS 12+ | Any |
-
-### Software to Download Before Starting
-
-- [VirtualBox 7.0+](https://www.virtualbox.org/wiki/Downloads) + Extension Pack
-- [Ubuntu Server 22.04 LTS ISO](https://ubuntu.com/download/server)
-- [Windows 10 Evaluation ISO](https://www.microsoft.com/en-us/evalcenter/evaluate-windows-10-enterprise)
-- [Wazuh OVA (All-in-One)](https://documentation.wazuh.com/current/deployment-options/virtual-machine/virtual-machine.html)
+> **Incident Response Playbooks & Simulation Environment**  
+> A hands-on cybersecurity project demonstrating incident detection, triage, containment, and documentation using open-source tools in an isolated lab environment.
 
 ---
 
-## Step 1 — Configure VirtualBox Host-Only Network
+## 📌 Project Overview
 
-A Host-Only network isolates all VMs from the internet and each other in a controlled subnet.
+This repository contains a fully documented **Incident Response (IR) framework** built around the **NIST SP 800-61** standard. It includes:
 
-1. Open VirtualBox → **File → Host Network Manager**
-2. Click **Create**
-3. Set the adapter:
-   - IPv4 Address: `192.168.56.1`
-   - IPv4 Mask: `255.255.255.0`
-4. **Disable** DHCP server (we assign IPs manually)
-5. Click **Apply**
+- A simulated home lab for generating and detecting real security events
+- Structured IR playbooks for 4 common incident types
+- Evidence artifacts from simulated incidents
+- A reusable incident report template
 
-> ⚠️ All VMs must use **Adapter 1: Host-Only Adapter** → `vboxnet0`. This ensures no traffic leaves your host machine.
+This project was built to demonstrate practical skills in **security operations, incident coordination, and stakeholder documentation** — aligned to real-world SOC analyst responsibilities.
 
 ---
 
-## Step 2 — Deploy Wazuh All-in-One (SIEM)
+## 🏗️ Lab Architecture
 
-Wazuh provides the SIEM, IDS alerting, and log dashboard.
+```
+┌─────────────────────────────────────────────────────┐
+│                  VirtualBox Host                     │
+│                                                      │
+│  ┌──────────────────┐    ┌──────────────────────┐   │
+│  │  Ubuntu Attacker  │    │   Windows 10 Victim  │   │
+│  │  192.168.56.102   │───▶│   192.168.56.101     │   │
+│  │  - Metasploit     │    │   - Wazuh Agent      │   │
+│  │  - Hydra          │    │   - Sysmon           │   │
+│  └──────────────────┘    └──────────┬───────────┘   │
+│                                      │ Logs          │
+│                           ┌──────────▼───────────┐   │
+│                           │   Wazuh SIEM Server  │   │
+│                           │   192.168.56.110     │   │
+│                           │   Dashboard: :443    │   │
+│                           └──────────────────────┘   │
+└─────────────────────────────────────────────────────┘
+        Network: Host-Only Adapter (isolated)
+```
 
-### 2a. Import the OVA
-1. VirtualBox → **File → Import Appliance**
-2. Select the downloaded Wazuh `.ova` file
-3. Set RAM to **4096 MB** minimum
-4. Change Network Adapter to **Host-Only**
-5. Click **Import**
+---
 
-### 2b. First Boot Configuration
+## 🛠️ Tools & Technologies
+
+| Tool | Purpose | Version |
+|------|---------|---------|
+| [Wazuh](https://wazuh.com) | SIEM, log collection, alerting | 4.7+ |
+| [VirtualBox](https://virtualbox.org) | Lab virtualisation | 7.0+ |
+| [Metasploit Framework](https://metasploit.com) | Attack simulation | 6.x |
+| [Hydra](https://github.com/vanhauser-thc/thc-hydra) | Brute-force simulation | 9.x |
+| [Nmap](https://nmap.org) | Network reconnaissance simulation | 7.x |
+| [Sysmon](https://learn.microsoft.com/en-us/sysinternals/downloads/sysmon) | Windows event telemetry | Latest |
+
+---
+
+## 📂 Repository Structure
+
+```
+IR-Playbook-Lab/
+├── README.md                        ← You are here
+├── lab_setup_guide.md               ← Step-by-step environment build
+│
+├── /playbooks
+│   ├── 01_brute_force.md            ← SSH/RDP credential attacks
+│   ├── 02_phishing.md               ← Phishing & malicious attachment
+│   ├── 03_malware.md                ← Malware execution & persistence
+│   └── 04_unauthorized_access.md   ← Insider threat / account misuse
+│
+├── /evidence
+│   ├── incident_001_brute_force/
+│   │   ├── wazuh_alert.png
+│   │   ├── auth_log_snippet.txt
+│   │   └── timeline.md
+│   └── incident_002_recon/
+│       └── ...
+│
+├── /reports
+│   ├── incident_report_template.md
+│   └── sample_completed_report.md
+│
+└── /diagrams
+    ├── lab_architecture.png
+    └── ir_process_flow.png
+```
+
+---
+
+## 📋 IR Playbook Structure
+
+Each playbook follows the **NIST SP 800-61 Rev. 2** lifecycle:
+
+```
+Detection → Analysis → Containment → Eradication → Recovery → Post-Incident
+```
+
+### Incident Types Covered
+
+| # | Incident Type | Trigger | Severity |
+|---|--------------|---------|---------|
+| 01 | SSH/RDP Brute Force | >10 failed auth attempts in 60s | High |
+| 02 | Phishing / Malicious Attachment | Suspicious email indicators | High |
+| 03 | Malware Execution | Unexpected process spawn, C2 beacon | Critical |
+| 04 | Unauthorised Access | Off-hours login, privilege escalation | High |
+
+---
+
+## 🔬 Simulated Incidents
+
+### Incident 001 — SSH Brute Force
+- **Tool used:** Hydra from attacker VM
+- **Detection:** Wazuh Rule ID 5712 fired after 15 failed SSH attempts
+- **Response:** Source IP blocked via firewall rule, affected account locked, credentials reset
+- **See:** `/evidence/incident_001_brute_force/`
+
+### Incident 002 — Network Reconnaissance
+- **Tool used:** Nmap SYN scan from attacker VM
+- **Detection:** Wazuh IDS alert on port scan signature
+- **Response:** IP logged, added to watchlist, incident escalated for review
+- **See:** `/evidence/incident_002_recon/`
+
+---
+
+## 📊 Frameworks & Standards Referenced
+
+| Framework | Application in This Project |
+|-----------|---------------------------|
+| **NIST SP 800-61 Rev. 2** | Overall IR lifecycle structure |
+| **MITRE ATT&CK** | Technique tagging in each playbook (e.g., T1110.001) |
+| **SANS PICERL Model** | Supplementary IR phase reference |
+| **ISO/IEC 27035** | Incident management policy alignment |
+
+---
+
+## 🚀 Getting Started
+
+### Prerequisites
+- VirtualBox 7.0+
+- 16GB RAM recommended (runs 3 VMs simultaneously)
+- Ubuntu 22.04 ISO and Windows 10 ISO
+
+### Quick Setup
 ```bash
-# Default credentials (change immediately):
-# Username: wazuh-user
-# Password: wazuh
+# Clone this repo
+git clone https://github.com/YOUR_USERNAME/IR-Playbook-Lab.git
+cd IR-Playbook-Lab
 
-# Set static IP
-sudo nano /etc/netplan/00-installer-config.yaml
+# Follow the full lab setup guide
+cat lab_setup_guide.md
 ```
 
-```yaml
-# /etc/netplan/00-installer-config.yaml
-network:
-  version: 2
-  ethernets:
-    eth0:
-      dhcp4: no
-      addresses: [192.168.56.110/24]
-      gateway4: 192.168.56.1
-      nameservers:
-        addresses: [8.8.8.8]
-```
-
-```bash
-sudo netplan apply
-ip addr show eth0   # Confirm IP is 192.168.56.110
-```
-
-### 2c. Access the Dashboard
-- From your **host machine** browser: `https://192.168.56.110`
-- Default credentials: `admin` / `SecretPassword` (shown post-install)
-- Accept the self-signed certificate warning
+See **`lab_setup_guide.md`** for the complete step-by-step environment build, including VM configuration, Wazuh installation, and agent deployment.
 
 ---
 
-## Step 3 — Create Ubuntu Attacker VM
+## 📝 Incident Report Template
 
-```
-Name:    Attacker-Ubuntu
-OS:      Ubuntu 22.04 LTS (64-bit)
-RAM:     2048 MB
-Disk:    25 GB (dynamically allocated)
-Network: Adapter 1 → Host-Only (vboxnet0)
-```
+Each simulated incident produces a formal report using the template in `/reports/incident_report_template.md`. Fields include:
 
-### 3a. Install Ubuntu Server
-- During setup: select **Minimized** installation
-- Set hostname: `attacker`
-- Create user: `attacker` / password of your choice
-
-### 3b. Set Static IP
-```bash
-sudo nano /etc/netplan/00-installer-config.yaml
-```
-```yaml
-network:
-  version: 2
-  ethernets:
-    enp0s3:
-      dhcp4: no
-      addresses: [192.168.56.102/24]
-```
-```bash
-sudo netplan apply
-```
-
-### 3c. Install Attack Tools
-```bash
-sudo apt update && sudo apt install -y \
-  nmap hydra metasploit-framework \
-  curl wget git python3-pip
-
-# Verify installations
-nmap --version
-hydra --version
-msfconsole --version
-```
+- Incident ID, date/time, classification
+- Executive summary
+- Technical timeline
+- Root cause analysis
+- Containment & remediation actions taken
+- Lessons learned
+- Recommendations
 
 ---
 
-## Step 4 — Create Windows 10 Victim VM
+## 🎯 Skills Demonstrated
 
-```
-Name:    Victim-Windows10
-OS:      Windows 10 (64-bit)
-RAM:     4096 MB
-Disk:    40 GB (dynamically allocated)
-Network: Adapter 1 → Host-Only (vboxnet0)
-```
-
-### 4a. Set Static IP
-- Settings → Network & Internet → Change adapter options
-- Right-click → Properties → IPv4 → Use the following address:
-  - IP: `192.168.56.101`
-  - Subnet: `255.255.255.0`
-  - Gateway: `192.168.56.1`
-
-### 4b. Install Sysmon (Enhanced Logging)
-```powershell
-# Download Sysmon and config (run in PowerShell as Admin)
-Invoke-WebRequest -Uri "https://download.sysinternals.com/files/Sysmon.zip" -OutFile "Sysmon.zip"
-Expand-Archive Sysmon.zip -DestinationPath C:\Sysmon
-
-# Download SwiftOnSecurity Sysmon config (best practice baseline)
-Invoke-WebRequest -Uri "https://raw.githubusercontent.com/SwiftOnSecurity/sysmon-config/master/sysmonconfig-export.xml" -OutFile "C:\Sysmon\sysmonconfig.xml"
-
-# Install Sysmon with config
-C:\Sysmon\Sysmon64.exe -accepteula -i C:\Sysmon\sysmonconfig.xml
-```
-
-### 4c. Install Wazuh Agent
-```powershell
-# Download Wazuh agent MSI
-Invoke-WebRequest -Uri "https://packages.wazuh.com/4.x/windows/wazuh-agent-4.7.0-1.msi" -OutFile "wazuh-agent.msi"
-
-# Install and register with Wazuh manager
-msiexec /i wazuh-agent.msi /q WAZUH_MANAGER="192.168.56.110" WAZUH_AGENT_NAME="Victim-Win10"
-
-# Start the agent service
-NET START WazuhSvc
-```
+- ✅ Incident detection and triage using a SIEM
+- ✅ Structured IR documentation following NIST 800-61
+- ✅ MITRE ATT&CK technique identification
+- ✅ Stakeholder-ready incident reporting
+- ✅ Hands-on experience with Wazuh, Metasploit, Hydra
+- ✅ Network isolation and lab environment management
 
 ---
 
-## Step 5 — Verify Lab Connectivity
+## 📚 References
 
-Run these checks before proceeding to incident simulations:
-
-```bash
-# From Attacker VM — confirm victim is reachable
-ping 192.168.56.101
-nmap -sn 192.168.56.0/24   # Should show all 3 IPs
-
-# From Wazuh dashboard → Agents
-# Confirm "Victim-Win10" appears as Active
-```
-
-Expected agent status in Wazuh: `Active` with a green indicator.
+- [NIST SP 800-61 Rev. 2 — Computer Security Incident Handling Guide](https://nvlpubs.nist.gov/nistpubs/SpecialPublications/NIST.SP.800-61r2.pdf)
+- [MITRE ATT&CK Framework](https://attack.mitre.org)
+- [Wazuh Documentation](https://documentation.wazuh.com)
+- [SANS Incident Handler's Handbook](https://www.sans.org/white-papers/33901/)
 
 ---
 
-## Step 6 — Take VM Snapshots
+## ⚠️ Legal Disclaimer
 
-Before running any simulations, snapshot all VMs. This lets you restore to a clean state instantly.
-
-```
-VirtualBox → Select each VM → Machine → Take Snapshot
-Name: "Clean Baseline - [date]"
-```
-
-> 💡 **Always restore to this snapshot before starting a new simulation.** This keeps your evidence clean and reproducible.
+All attacks and scans in this project were performed **exclusively within an isolated, self-owned virtual lab environment**. No external networks, systems, or third-party infrastructure were targeted. This project is for **educational purposes only**.
 
 ---
-
-## Lab IP Reference
-
-| Host | IP | Role |
-|------|----|------|
-| VirtualBox Host | 192.168.56.1 | Host machine |
-| Wazuh SIEM | 192.168.56.110 | Log aggregation, alerting |
-| Windows Victim | 192.168.56.101 | Target, Wazuh agent installed |
-| Ubuntu Attacker | 192.168.56.102 | Attack simulation platform |
-
----
-
-## Troubleshooting
-
-**VMs can't ping each other:**
-- Confirm all are on the same Host-Only adapter (`vboxnet0`)
-- Temporarily disable Windows Firewall on Victim VM for testing
-- Check VirtualBox → Preferences → Network → vboxnet0 is enabled
-
-**Wazuh agent shows Disconnected:**
-- Check Wazuh manager IP is correct: `C:\Program Files (x86)\ossec-agent\ossec.conf`
-- Restart agent: `NET STOP WazuhSvc && NET START WazuhSvc`
-- Check firewall isn't blocking port 1514 (UDP) from Victim to SIEM
-
-**Nmap from attacker returns nothing:**
-- Confirm attacker IP is in the `192.168.56.x` subnet
-- Run `ip addr show` to verify
