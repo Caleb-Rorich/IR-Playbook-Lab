@@ -6,7 +6,7 @@
 |-------|-------|
 | **Incident ID** | INC-2024-01-15-001 |
 | **Report Date** | 2024-01-15 |
-| **Report Author** | [Your Name], IT Security Analyst |
+| **Report Author** | Caleb Rorich, IT Security Analyst |
 | **Classification** | CONFIDENTIAL — IT SECURITY |
 | **Incident Type** | Brute Force |
 | **Severity** | High |
